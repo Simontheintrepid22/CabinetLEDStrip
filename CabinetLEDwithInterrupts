@@ -1,0 +1,167 @@
+//Sketch currently includes interrupt code in debounce line 16, setup line 30 and void 132-139
+
+#include <IRremote.h> //IR receiver library
+
+// define pins for LED colours and IR receiver (3, 5 and 6 are PWM)
+#define Red 3
+#define Green 5
+#define Blue 6
+const int IR = 2;
+IRrecv irrecv(IR); // Defines the IR receiver object
+
+//General variables
+unsigned long IRinput = 0; //Stores button code from remote
+int function = 0; // Tells Arduino which code to use as defined below. 0 is off, 1 is intro, 2 is main repeating sequence, 3 is outro
+unsigned long currentTime = 0; //variable for holding millis(), updates every loop
+unsigned long debounce = 0; //variable for storing millis() when signal recieved, to make the button refractory and avoid it reading signal multiple times
+
+//LED variables
+int pulseBrightRed = 255; //PWM brightness of red LEDs - set to off at start
+int pulseBrightGreen = 255; //PWM brightness of red LEDs - set to off at start
+int pulseBrightBlue = 255; //PWM brightness of red LEDs - set to off at start
+int pulseState = 1; //variable for changing between different transitions (in this case back and forth between deep blue and green blue)
+int pulseSpeed = 150; //variable to modify pulse speed, higher is slower
+unsigned long pulseLast = 0; //Speed of pulse cycle, higher is faster
+
+
+void setup() {
+  //General
+  Serial.begin(115200); //Opens connection to serial monitor
+  attachInterrupt(digitalPinToInterrupt(IR), IRreceived, FALLING); //Enables IR pin for interrupts. Other options are LOW, CHANGE or RISING if FALLING doesn't work
+
+  //Activate and sort out the pins
+  pinMode(Red, OUTPUT);
+  pinMode(Green, OUTPUT);
+  pinMode(Blue, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT); //For debugging
+  irrecv.enableIRIn();
+}
+
+void IRreceived(){
+  if (irrecv.decode() && currentTime - debounce >= 1000) { //Reads remote value if more than 1 second has passed since last press
+    IRinput = irrecv.decodedIRData.decodedRawData; //Stores remote input value
+    //Serial.print(irrecv.decodedIRData.decodedRawData); // Prints the input value of the button press, for debugging
+    //Serial.print(" Hex: "); Serial.print(irrecv.decodedIRData.decodedRawData, HEX); //More debugging
+    //Serial.print(" Input value: "); Serial.println(IRinput); //More debugging
+    irrecv.resume(); // Resets the IR receiver for the next signal
+    debounce = currentTime;
+  }
+}
+
+void loop() {
+ 
+currentTime = millis(); //Records millis() so you don't have to call it every time
+
+//Remote on/off button actions
+if (IRinput == 869042040 && function == 0){ //If LEDs are off (note numerical IR code Xbox sends is different to sound bar power)
+  function = 1; //Starts intro sequence
+  IRinput = 0; //Resets IR input value so it doesn't think button is being repeatedly pressed
+//digitalWrite(LED_BUILTIN, HIGH); //debugging
+//delay(1000); //debugging
+//digitalWrite(LED_BUILTIN, LOW); //debugging
+} 
+if (IRinput == 869042040 && function > 0){ //If LEDs are on
+  function = 3; //Moves to outro sequence
+  IRinput = 0; //Resets IR input value so it doesn't think button is being repeatedly pressed
+}
+//Serial.print("  Func: "); Serial.println(function); //debugging
+
+//LED functions: 0 = off; 1 = intro; 2 = main; 3 = outro
+if (function == 0){ //LEDs off
+  digitalWrite (Red, HIGH);
+  digitalWrite (Green, HIGH);
+  digitalWrite (Blue, HIGH);
+}
+
+if (function == 1){ //Intro sequence
+
+  for (int i = 0; i <= 255; i++) {
+      analogWrite (Red, 255);
+      analogWrite (Green, 255);
+      analogWrite (Blue, pulseBrightBlue);
+      pulseBrightBlue = pulseBrightBlue - 1;
+      delay(3);
+  }
+
+  for (int i = 0; i <= 205; i++) {
+      analogWrite (Red, 255);
+      analogWrite (Green, pulseBrightGreen);
+      analogWrite (Blue, 0);
+      pulseBrightGreen = pulseBrightGreen - 1;
+      delay(3);
+  }
+
+  for (int i = 0; i <= 205; i++) {
+      analogWrite (Red, 255);
+      analogWrite (Green, pulseBrightGreen);
+      analogWrite (Blue, 0);
+      pulseBrightGreen = pulseBrightGreen + 1;
+      delay(3);
+  }
+
+  for (int i = 0; i <= 205; i++) {
+      analogWrite (Red, 255);
+      analogWrite (Green, pulseBrightGreen);
+      analogWrite (Blue, 0);
+      pulseBrightGreen = pulseBrightGreen - 1;
+      delay(3);
+  }
+
+  for (int i = 0; i <= 205; i++) {
+      analogWrite (Red, 255);
+      analogWrite (Green, pulseBrightGreen);
+      analogWrite (Blue, 0);
+      pulseBrightGreen = pulseBrightGreen + 1;
+      delay(3);
+  }
+  function = 2; // Moves to main sequence
+}
+
+if (function == 2 && currentTime - pulseLast >= pulseSpeed){ //Main sequence, calls pulse function below
+  pulse();  
+  pulseLast = currentTime;
+}
+
+if (function == 3){ //Outro sequence - fades out green and blue
+  for (int i = 0; i <= 255; i++) {
+      if (pulseBrightGreen < 255) {
+        pulseBrightGreen = pulseBrightGreen + 1;
+      }
+      if (pulseBrightBlue < 255) {
+        pulseBrightBlue = pulseBrightBlue + 1;
+      }
+      analogWrite (Red, 255);
+      analogWrite (Green, pulseBrightGreen);
+      analogWrite (Blue, pulseBrightBlue);
+      delay(10);
+  }
+  function = 0; // Moves function to LED off state
+  }
+} 
+
+void pulse(){
+
+  pulseBrightBlue = 0;
+  pulseBrightRed = 255;
+
+  if (pulseState == 0){
+  pulseBrightGreen = pulseBrightGreen + 1;
+  }
+  if (pulseState == 1){
+  pulseBrightGreen = pulseBrightGreen - 1;
+  }
+  if (pulseBrightGreen == 255 || pulseBrightGreen == 50){
+    pulseState = 1 - pulseState;
+  }
+  if (pulseBrightGreen > 255){ //This stop it going off the top end
+    pulseBrightGreen = 254;
+    pulseState = 1;
+  }
+  if (pulseBrightGreen < 50){ //This stop it going off the bottom end
+    pulseBrightGreen = 51;
+    pulseState = 0;
+  }
+  analogWrite(Red, pulseBrightRed);
+  analogWrite(Green, pulseBrightGreen);
+  analogWrite(Blue, pulseBrightBlue);
+}
