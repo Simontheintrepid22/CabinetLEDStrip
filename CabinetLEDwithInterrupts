@@ -51,7 +51,7 @@ void loop() {
 currentTime = millis(); //Records millis() so you don't have to call it every time
 
 //Remote on/off button actions
-if (IRinput == 869042040 && function == 0){ //If LEDs are off (note numerical IR code Xbox sends is different to sound bar power)
+if (IRinput == 869042040 && function == 0){ //If LEDs are off 
   function = 1; //Starts intro sequence
   IRinput = 0; //Resets IR input value so it doesn't think button is being repeatedly pressed
 //digitalWrite(LED_BUILTIN, HIGH); //debugging
