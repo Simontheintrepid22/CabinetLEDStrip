@@ -15,8 +15,8 @@ unsigned long debounce = 0; //variable for storing millis() when signal recieved
 
 //LED variables
 int pulseBrightRed = 255; //PWM brightness of red LEDs - set to off at start
-int pulseBrightGreen = 255; //PWM brightness of red LEDs - set to off at start
-int pulseBrightBlue = 255; //PWM brightness of red LEDs - set to off at start
+int pulseBrightGreen = 255; //PWM brightness of green LEDs - set to off at start
+int pulseBrightBlue = 255; //PWM brightness of blue LEDs - set to off at start
 int pulseState = 1; //variable for changing between different transitions (in this case back and forth between deep blue and green blue)
 int pulseSpeed = 150; //variable to modify pulse speed, higher is slower
 unsigned long pulseLast = 0; //Speed of pulse cycle, higher is faster
