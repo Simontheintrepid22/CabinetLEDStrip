@@ -151,11 +151,11 @@ void pulse(){
   if (pulseBrightGreen == 255 || pulseBrightGreen == 50){
     pulseState = 1 - pulseState;
   }
-  if (pulseBrightGreen > 255){ //This stop it going off the top end
+  if (pulseBrightGreen > 255){ //This stops it going off the top end
     pulseBrightGreen = 254;
     pulseState = 1;
   }
-  if (pulseBrightGreen < 50){ //This stop it going off the bottom end
+  if (pulseBrightGreen < 50){ //This stops it going off the bottom end
     pulseBrightGreen = 51;
     pulseState = 0;
   }
