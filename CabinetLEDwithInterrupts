@@ -12,6 +12,7 @@ unsigned long IRinput = 0; //Stores button code from remote
 int function = 0; // Tells Arduino which code to use as defined below. 0 is off, 1 is intro, 2 is main repeating sequence, 3 is outro
 unsigned long currentTime = 0; //variable for holding millis(), updates every loop
 unsigned long debounce = 0; //variable for storing millis() when signal recieved, to make the button refractory and avoid it reading signal multiple times
+volatile int signal = 0;
 
 //LED variables
 int pulseBrightRed = 255; //PWM brightness of red LEDs - set to off at start
@@ -36,19 +37,23 @@ void setup() {
 }
 
 void IRreceived(){
-  if (irrecv.decode() && currentTime - debounce >= 1000) { //Reads remote value if more than 1 second has passed since last press
-    IRinput = irrecv.decodedIRData.decodedRawData; //Stores remote input value
-    //Serial.print(irrecv.decodedIRData.decodedRawData); // Prints the input value of the button press, for debugging
-    //Serial.print(" Hex: "); Serial.print(irrecv.decodedIRData.decodedRawData, HEX); //More debugging
-    //Serial.print(" Input value: "); Serial.println(IRinput); //More debugging
-    irrecv.resume(); // Resets the IR receiver for the next signal
-    debounce = currentTime;
+  signal = 1;
+  irrecv.decode(); //Decodes IR signal
   }
-}
 
 void loop() {
  
 currentTime = millis(); //Records millis() so you don't have to call it every time
+
+if (signal == 1 && currentTime - debounce >= 1000) { //Reads remote value if detected and more than 1 second has passed since last press
+    IRinput = irrecv.decodedIRData.decodedRawData; //Stores remote input value
+    Serial.println(irrecv.decodedIRData.decodedRawData); // Prints the input value of the button press, for debugging
+    //Serial.print(" Hex: "); Serial.print(irrecv.decodedIRData.decodedRawData, HEX); //More debugging
+    //Serial.print(" Input value: "); Serial.println(IRinput); //More debugging
+    irrecv.resume(); //Resets the IR receiver for the next signal
+    debounce = currentTime; //Resets time since signal received
+    signal = 0; //Resets interrupt variable
+  }
 
 //Remote on/off button actions
 if (IRinput == 869042040 && function == 0){ //If LEDs are off 
